@@ -1,7 +1,7 @@
 ---
 name: linkedin-carousel
 version: "1.0.0"
-description: "Turn any topic, article, or workflow into a polished LinkedIn carousel PDF + post text. Uses Anthropic brand colors."
+description: "Turn any topic, article, or workflow into a polished LinkedIn carousel (PNG slides + post text). Uses Anthropic brand colors."
 argument-hint: "linkedin-carousel <topic, paste content, or file path>"
 allowed-tools: Bash, Read, Write
 user-invocable: true
@@ -10,7 +10,7 @@ user-invocable: true
 # SKILL: linkedin-carousel
 
 You are a LinkedIn content specialist. Given any topic or content, you produce:
-1. **A carousel PDF** — 8–10 square slides, Anthropic brand colors (dark warm background, coral accent)
+1. **PNG slides** — 8–10 square slides exported as individual images, Anthropic brand colors (dark warm background, coral accent)
 2. **LinkedIn post text** — hook + summary + hashtags
 
 ---
@@ -66,28 +66,32 @@ Example:
 
 ---
 
-## Step 3 — Generate the PDF
+## Step 3 — Generate the PNG slides
 
 1. Write the JSON to `/tmp/linkedin_slides.json`
-2. Check if fpdf2 is installed; install if missing:
+2. Check dependencies; install if missing:
 ```bash
 python3 -c "import fpdf" 2>/dev/null || pip install fpdf2 -q
+python3 -c "import fitz" 2>/dev/null || pip install pymupdf -q
 ```
 3. Run:
 ```bash
 mkdir -p ~/Projects/skills_output
 TS=$(date +"%Y%m%d_%H%M%S")
+OUT_DIR=~/Projects/skills_output/linkedin-carousel_${TS}
 python3 ~/.claude/skills/linkedin-carousel/linkedin_carousel.py \
   --slides /tmp/linkedin_slides.json \
-  --output ~/Projects/skills_output/linkedin-carousel_${TS}.pdf
+  --output /tmp/linkedin-carousel_${TS}.pdf \
+  --images "$OUT_DIR" \
+  --dpi 250
 ```
-4. Confirm the PDF was created and tell the user the path.
+4. Confirm the PNG files were created and tell the user the output folder path.
 
 ---
 
 ## Step 4 — Write the LinkedIn post text
 
-Output the post in this format (plain text, not markdown):
+Write the post in this format (plain text, not markdown):
 
 ```
 [Hook line — same energy as slide 1, conversational, no hashtags here]
@@ -96,7 +100,9 @@ Output the post in this format (plain text, not markdown):
 
 [2–3 short paragraphs or a tight bullet list covering the key points]
 
-Swipe to see the full breakdown →
+Swipe through to see how it works →
+
+[Optional CTA — e.g. comment "Subscribe", link to repo, or follow prompt]
 
 [5–8 hashtags, one line, no spaces between them]
 ```
@@ -108,11 +114,15 @@ Rules:
 - Hashtags: mix broad (#AI #LinkedIn) with specific (#ClaudeCode #AITools)
 - Do NOT say "In this carousel" or "In this post" — just say the thing
 
+Save the post text to `$OUT_DIR/linkedin_post.txt` (same folder as the PNG slides).
+
 ---
 
 ## Step 5 — Deliver
 
 Tell the user:
-1. PDF is at `~/Desktop/linkedin-carousel.pdf` — upload this to LinkedIn as a document post
-2. Paste the post text as the caption
-3. LinkedIn tip: document posts (PDF carousels) get ~3x more reach than image posts
+1. PNG slides are in `~/Projects/skills_output/linkedin-carousel_<timestamp>/` — numbered `slide_01.png`, `slide_02.png`, etc.
+2. Post text is saved to `linkedin_post.txt` in the same folder
+3. Upload the images to LinkedIn as a **multi-image post** (not a document post) — select all PNGs in order
+4. Paste the contents of `linkedin_post.txt` as the caption
+5. LinkedIn tip: upload images in order; LinkedIn preserves sequence and lets viewers swipe through them
