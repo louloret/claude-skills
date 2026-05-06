@@ -556,6 +556,28 @@ def export_images(pdf_path: str, out_dir: str, dpi: int = 250) -> list[str]:
     return paths
 
 
+def export_images(pdf_path: str, out_dir: str, dpi: int = 150) -> list[str]:
+    """Render each PDF page to a PNG. Returns list of created paths."""
+    try:
+        import fitz  # PyMuPDF
+    except ImportError:
+        print("PyMuPDF required for image export: pip install pymupdf", file=sys.stderr)
+        sys.exit(1)
+
+    os.makedirs(out_dir, exist_ok=True)
+    zoom = dpi / 72
+    mat = fitz.Matrix(zoom, zoom)
+    doc = fitz.open(pdf_path)
+    paths = []
+    for i, page in enumerate(doc, 1):
+        pix = page.get_pixmap(matrix=mat, alpha=False)
+        out = os.path.join(out_dir, f"slide_{i:02d}.png")
+        pix.save(out)
+        paths.append(out)
+    doc.close()
+    return paths
+
+
 def main():
     parser = argparse.ArgumentParser(description="Generate LinkedIn carousel PDF")
     parser.add_argument("--slides", required=True, help="JSON file with slides array")
